@@ -48,6 +48,24 @@ nb orm upgrade # 一般用不上, 数据库更新之后需要
 
 然后就能用了, 还有问题可提 issue
 
+## docker (linux only)
+
+适当修改 `.env.prod`, 然后
+
+```bash
+sudo docker-compose --env-file .env.prod up -d
+sudo docker-compose logs -f napcat
+
+```
+手动登录, 然后进入webui(token在上面)(一般是 http://127.0.0.1:6099), 添加网络配置
+
+名称随意, 0.0.0.0 , 类型是ws服务器, token: 和 .env.prod 的ONEBOT_ACCESS_TOKEN和YAOHUD__UPLOAD_WS_TOKEN相同
+
+```bash
+sudo docker-compose logs -f rosbot # 检查是否连接成功
+```
+
+
 ## 依赖导出方式:
 
 ```bash
