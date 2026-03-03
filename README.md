@@ -75,6 +75,43 @@ token: 和 .env.prod 的ONEBOT_ACCESS_TOKEN和YAOHUD__UPLOAD_WS_TOKEN相同
 sudo docker logs -f rosbot # 检查是否连接成功
 ```
 
+## docker 使用构建产物
+
+windows用户请考虑不用docker部署或者手动打包, 构建产物不含 windows 支持
+
+注意, 构建产物不一定包含最新的功能(仅构建release分支), 可以 `fork` 然后手动触发 `action` 构建
+
+自己 `fork` 请修改 `.env.prod` 的 `#IMAGE=` , 取消注释并改为你的构建产物地址
+
+打开文件 [docker-compose.yml](docker-compose.yml) , 找到
+
+```yml
+services:
+  # 机器人服务
+  rosbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # image: ${IMAGE:-ghcr.io/com-wuqi/rosmontis.io:latest}
+    container_name: rosbot
+    restart: unless-stopped
+```
+
+修改为:
+
+```yml
+services:
+  # 机器人服务
+  rosbot:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    image: ${IMAGE:-ghcr.io/com-wuqi/rosmontis.io:latest}
+    container_name: rosbot
+    restart: unless-stopped
+```
+
+然后进行上文的 `docker 手动构建` 过程 .
 
 ## 依赖导出方式:
 
