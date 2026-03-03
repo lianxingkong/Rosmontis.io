@@ -116,7 +116,7 @@ services:
 ## 依赖导出方式:
 
 ```bash
-pip list --format=freeze > requirements.txt
+pip-chill > requirements.txt
 ```
 
 ## 许可证

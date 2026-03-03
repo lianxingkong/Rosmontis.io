@@ -41,7 +41,7 @@ async def send_messages_to_ai(key:str,url:str,model_name:str,temperature:float,m
         chat_completion = await client.chat.completions.create(
             model=model_name,
             messages=messages,
-            tools=tools,
+            tools=tools or None,
             temperature=temperature
         )
         return chat_completion.choices[0].message

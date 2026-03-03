@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
     environment:
       # 从 .env.prod 加载，这里可以覆盖
-      - SQLALCHEMY_DATABASE_URL=mysql+aiomysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/data
+      - SQLALCHEMY_DATABASE_URL=mysql+aiomysql://rosbot:${MYSQL_PASSWORD}@mysql:3306/data
       - ONEBOT_WS_URLS=["ws://napcat:3001/onebot/v11/ws"]
       - ONEBOT_ACCESS_TOKEN=${ONEBOT_ACCESS_TOKEN}
       - YAOHUD__UPLOAD_WS_URL=ws://napcat:3001
@@ -92,10 +92,4 @@ volumes:
   rosbot_data:
     driver: local
   mysql_data:
-    driver: local
-  napcat_config:
-    driver: local
-  napcat_qq_data:
-    driver: local
-  napcat_logs:
     driver: local

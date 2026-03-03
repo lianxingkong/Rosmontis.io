@@ -45,7 +45,7 @@ class OneBotUploadTester:
         
         Args:
             file_path: 文件路径
-            chunk_size: 分片大小（默认64KB）
+            chunk_size: 分片大小（默认64字节）
             
         Returns:
             (chunks, sha256_hash, total_size)

@@ -3,9 +3,6 @@ set -e
 
 echo "🔄 等待数据库就绪..."
 
-MAX_RETRIES=30
-RETRY_COUNT=0
-
 # 等待 MySQL 可用（使用 text() 包装 SQL）
 until python -c "
 import asyncio
@@ -36,12 +33,7 @@ async def test():
 result = asyncio.run(test())
 exit(0 if result else 1)
 "; do
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
-        echo "❌ 数据库在 $MAX_RETRIES 次重试后仍不可用，退出。"
-        exit 1
-    fi
-    echo "⏳ 重试中... ($RETRY_COUNT/$MAX_RETRIES)"
+    echo "⏳ 重试中... "
     sleep 3
 done
 
