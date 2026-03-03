@@ -111,6 +111,9 @@ services:
     restart: unless-stopped
 ```
 
+注意前往: https://github.com/com-wuqi/Rosmontis.io/pkgs/container/rosmontis.io 检查标签,
+将 `latest` 换为最新的构建
+
 然后进行上文的 `docker 手动构建` 过程 .
 
 ## 依赖导出方式:
