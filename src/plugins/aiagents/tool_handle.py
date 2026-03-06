@@ -6,7 +6,7 @@ from .tool_funcs import *
 async def handle_web_search(tool_call) -> dict:
     args = json.loads(tool_call.function.arguments)
     query = args.get("query")
-    if query is None:
+    if not query:
         return {}
     freshness = args.get("freshness", "noLimit")
     count = args.get("count", 10)
