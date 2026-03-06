@@ -7,11 +7,10 @@ from nonebot.internal.params import ArgPlainText
 
 require("nonebot_plugin_orm")
 from nonebot_plugin_orm import get_session, async_scoped_session
-from .aihelper_handles import *
 from . import config
-import asyncio
 require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler
+from .aihelper_handles import *
 
 _Messages_dicts = {}
 # 这里应该是 {comments_id : Messages} 这里的id用于区分不同用户
@@ -231,7 +230,7 @@ async def ai_chat_handle(event: MessageEvent):
         # 指定配置文件
 
         _counts = 0
-        while _counts < config.websearch_max_once_calls:
+        while _counts < config.tools_max_once_calls:
             _res = await send_messages_to_ai(
                 key=_event_setting.api_key,url=_event_setting.url,
                 model_name=_event_setting.model_name,
@@ -263,11 +262,8 @@ async def ai_chat_handle(event: MessageEvent):
                 # 保存 工具调用请求的上下文
                 if tool_call.function.name == "web_search":
                     # 处理工具
-                    args = json.loads(tool_call.function.arguments)
-                    query = args.get("query")
-                    freshness = args.get("freshness","noLimit")
-                    count = args.get("count", 10)
-                    _searched = await call_web_search(query=query,freshness=freshness,count=count)
+                    _searched = await agents.handle_web_search(tool_call=tool_call)
+                    logger.debug(f"called web_search")
                     _raw_message.append({"tool_call_id": tool_call.id,"role": "tool","content": str(_searched)})
 
                 else:

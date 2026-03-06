@@ -35,7 +35,7 @@ pip install -r requirements.txt
 安装数据库不再赘述, 记得创建空数据库用于初始化即可
 
 ```bash
-nb orm upgrade # 一般用不上, 数据库更新之后需要
+nb orm upgrade # 第一次使用需要执行, 数据库更新之后也需要
 ```
 
 ### 调整配置文件
@@ -111,6 +111,9 @@ services:
     restart: unless-stopped
 ```
 
+注意前往: https://github.com/com-wuqi/Rosmontis.io/pkgs/container/rosmontis.io 检查标签,
+将 `latest` 换为最新的构建
+
 然后进行上文的 `docker 手动构建` 过程 .
 
 ## 依赖导出方式:
@@ -118,6 +121,18 @@ services:
 ```bash
 pip-chill > requirements.txt
 ```
+
+## 引用的其他项目
+
+https://github.com/NapNeko/NapCatQQ
+
+https://github.com/gfhdhytghd/qzone-toolkit
+
+https://github.com/sansenjian/quick-e2b-sandbox
+
+## 小工具
+
+[compare_env.py](compare_env.py) : 比较配置文件的环境变量条目是否相同
 
 ## 许可证
 

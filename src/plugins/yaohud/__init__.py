@@ -30,3 +30,4 @@ if config.is_enable:
     from .yaohud_image import *
     from .yaohud_ai import *
     from .yaohud_music import *
+    from .yaohud_other import *

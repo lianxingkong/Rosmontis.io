@@ -16,9 +16,11 @@ from typing import List, Optional
 
 import websockets
 
+from . import config
+
 
 class OneBotUploadTester:
-    def __init__(self, ws_url: str = "ws://localhost:3001", access_token: Optional[str] = None):
+    def __init__(self, ws_url: str = config.upload_ws_url, access_token: Optional[str] = config.upload_ws_token):
         self.ws_url = ws_url
         self.access_token = access_token
         self.websocket = None
