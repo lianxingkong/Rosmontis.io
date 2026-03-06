@@ -9,8 +9,6 @@ class ScopedConfig(BaseModel):
     api_key: str
     api_secret: str
     is_enable_upload: bool
-    upload_ws_url: str  # 上传 url
-    upload_ws_token: str  # token
     wyvip_cookie: str = ""  # 暂时不使用
     wyvip_level: str
     # standard：标准音质 | exhigh：极高音质 |lossless 无损音质 | hires Hi-Res音质 | jyeffect 高清环绕声 | sky：沉浸环绕声 | jymaster：超清母带

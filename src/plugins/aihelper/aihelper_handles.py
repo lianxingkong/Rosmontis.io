@@ -11,12 +11,13 @@ from .models import *
 require("nonebot_plugin_orm")
 from nonebot_plugin_orm import AsyncSession
 from . import config
-from .tools import *
-import httpx
+from nonebot import require
+
+require("src.plugins.aiagents")
+import src.plugins.aiagents as agents
 
 semaphore = asyncio.Semaphore(50)  # 网络限制最大并发数为50
 semaphore_sql = asyncio.Semaphore(50) # 数据库最大并发50
-semaphore_websearch = asyncio.Semaphore(50) # 网络搜索最大并发
 
 async def get_model_names(key:str,url:str) -> List[str]:
     async with semaphore:
@@ -36,7 +37,7 @@ async def send_messages_to_ai(key:str,url:str,model_name:str,temperature:float,m
     async with semaphore:
         tools = []
         if config.is_enable_websearch:
-            tools.append(WEB_SEARCH_TOOL)
+            tools.append(agents.get_dict_by_name(name="WEB_SEARCH_TOOL"))
         client = AsyncOpenAI(base_url=url,api_key=key,timeout=60)
         chat_completion = await client.chat.completions.create(
             model=model_name,
@@ -136,58 +137,3 @@ async def get_all_comment_ids(session: AsyncSession) -> List[int]:
         id_list = list(result.scalars().all())
         return id_list
 
-async def call_web_search(
-        query: str,
-        freshness: str,
-        summary: bool = True,
-        count: int = 10,
-        timeout: float = config.websearch_timeout
-) -> Dict:
-    """
-    异步调用 Web Search API（兼容 httpx）
-
-    Args:
-        query: 搜索关键词
-        summary: 是否返回摘要（默认 True）
-        count: 返回结果数量（默认 10）
-        timeout: 请求超时时间（默认 60秒）
-        freshness: 搜索指定时间范围内的网页 [noLimit,oneDay,oneWeek,oneMonth,oneYear]
-
-    Returns:
-        (数据清洗后的)字典，若出错则包含 error 字段, 成功为 success 字段
-    """
-    headers = {
-        "Authorization": f"Bearer {config.websearch_api_key}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "query": query,
-        "summary": summary,
-        "count": count,
-        "freshness": freshness,
-    }
-    async with semaphore_websearch:
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            try:
-                response = await client.post(
-                    config.websearch_base_url,
-                    headers=headers,
-                    json=payload  # httpx 会自动序列化字典为 JSON
-                )
-                response.raise_for_status()
-                raw_data = response.json()
-                data = {}
-                _ids = 0
-                for d in raw_data['data']["webPages"]["value"]:
-                    # 数据清洗, 字段更易于阅读
-                    data[_ids] = f"标题: {d['name']}\n, url: {d['url']}, 总结: {d['summary']}"
-                    _ids += 1
-                return {"success":data}
-            except httpx.TimeoutException:
-                return {"error": "请求超时"}
-            except httpx.HTTPStatusError as e:
-                return {"error": f"HTTP 错误 {e.response.status_code}: {e.response.text}"}
-            except KeyError as e:
-                return {"error": f"keyError: {e}"}
-            except Exception as e:
-                return {"error": f"请求异常: {str(e)}"}

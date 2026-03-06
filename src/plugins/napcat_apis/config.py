@@ -4,10 +4,10 @@ from pydantic import BaseModel
 class ScopedConfig(BaseModel):
     """Plugin Config Here"""
     is_enable: bool
-    tools_max_once_calls: int
-    is_enable_websearch: bool
+    upload_ws_url: str  # 上传 url
+    upload_ws_token: str  # token
 
 
 class Config(BaseModel):
-    """插件主配置，包含作用域"""
-    aihelper: ScopedConfig
+    """Plugin Config Here"""
+    napcatapi: ScopedConfig
