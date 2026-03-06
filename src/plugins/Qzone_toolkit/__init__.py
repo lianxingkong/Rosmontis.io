@@ -3,16 +3,14 @@ import base64
 import json
 import os
 import re
-import sys
 import traceback
 import typing
 from pathlib import Path
 
 import httpx
 import requests
-from nonebot import get_plugin_config, on_command
+from nonebot import get_plugin_config
 from nonebot.plugin import PluginMetadata
-from nonebot.rule import to_me
 
 from .config import Config
 
@@ -456,19 +454,19 @@ async def send(message: str, image_directory: str = None, qq: str = None) -> Non
 # __main__ 部分：当脚本作为独立程序运行时，从命令行参数中读取参数
 #########################################################
 
-if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        print("Usage: python3 <script> <message> <image_directory> <QQ号码>")
-        sys.exit(1)
-    message = sys.argv[1]
-    image_directory = sys.argv[2]
-    qq = sys.argv[3]
-    asyncio.run(send(message, image_directory, qq))
+# if __name__ == "__main__":
+#     if len(sys.argv) < 4:
+#         print("Usage: python3 <script> <message> <image_directory> <QQ号码>")
+#         sys.exit(1)
+#     message = sys.argv[1]
+#     image_directory = sys.argv[2]
+#     qq = sys.argv[3]
+#     asyncio.run(send(message, image_directory, qq))
 
-testsend = on_command("sendqzonetest", rule=to_me(), priority=5)
-
-
-@testsend.handle()
-async def handle():
-    await testsend.send("正在测试发送")
-    await send("这是一条测试说说", "/home/admin/Onbwall/Onbwall/submissions/1", "2947159526")
+# testsend = on_command("sendqzonetest", rule=to_me(), priority=5)
+#
+#
+# @testsend.handle()
+# async def handle():
+#     await testsend.send("正在测试发送")
+#     await send("这是一条测试说说", "/home/1", "6")
