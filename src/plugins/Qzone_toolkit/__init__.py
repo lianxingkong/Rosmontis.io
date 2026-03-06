@@ -216,18 +216,18 @@ class QzoneAPI:
                 self.uin = int(self.cookies['uin'])
 
     async def do(self, method: str, url: str, params: dict = {}, data: dict = {}, headers: dict = {},
-                 cookies: dict = None, timeout: int = 10) -> requests.Response:
+                 cookies: dict = None, timeout: int = 10) -> httpx.Response:
         if cookies is None:
             cookies = self.cookies
-        return requests.request(
-            method=method,
-            url=url,
-            params=params,
-            data=data,
-            headers=headers,
-            cookies=cookies,
-            timeout=timeout
-        )
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            return await client.request(
+                method=method,
+                url=url,
+                params=params,
+                data=data,
+                headers=headers,
+                cookies=cookies,
+            )
 
     async def token_valid(self, retry=3) -> bool:
         for i in range(retry):
