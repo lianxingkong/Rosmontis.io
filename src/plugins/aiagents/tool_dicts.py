@@ -49,6 +49,8 @@ def get_dict_by_name(name: str) -> dict:
                     "timeout": {
                         "type": "integer",
                         "description": "容器的有效期, 单位秒, 最长3600秒, 默认120秒",
+                        "minimum": 1,
+                        "maximum": 3600,
                         "default": 120
 
                     }

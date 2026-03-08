@@ -60,14 +60,14 @@ async def today():
                 return "\n".join(data_json["msg"]["content"])
 
             except HTTPStatusError as e:
-                logger.warning(f"/api/v5/whois failed with {e}")
+                logger.warning(f"/api/v6/lishi failed with {e}")
                 return -1
             except JSONDecodeError as e:
-                logger.warning(f"/api/v5/whois failed with {e}")
+                logger.warning(f"/api/v6/lishi failed with {e}")
                 return -1
             except KeyError as e:
-                logger.warning(f"/api/v5/whois failed with {e}")
+                logger.warning(f"/api/v6/lishi failed with {e}")
                 return -1
             except Exception as e:
-                logger.warning(f"/api/v5/whois failed with {e}")
+                logger.warning(f"/api/v6/lishi failed with {e}")
                 return -1

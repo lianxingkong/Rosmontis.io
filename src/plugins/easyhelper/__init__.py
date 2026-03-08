@@ -42,7 +42,7 @@ async def request_help_handle(args: Message = CommandArg()):
     ai cf edit -- 编辑配置(暂不实现)
     ai cf switch -- 切换配置
     ai load -- 启动AI
-    system [提示词] -- 添加 system 提示词(对话进行时+权限要求
+    system [提示词] -- 添加 system 提示词(对话进行时+权限要求)
     ai save -- 退出AI
     ai remove -- 删除数据库中的对话
     ai zp mm -- 压缩内存中缓存的对话

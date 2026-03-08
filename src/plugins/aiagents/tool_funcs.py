@@ -1,8 +1,8 @@
 import asyncio
+import time
 from typing import Dict
 
 import httpx
-import time
 from e2b_code_interpreter import AsyncSandbox
 from nonebot.log import logger
 
@@ -103,7 +103,7 @@ async def run_code_in_e2b(code: str, requirements: list, timeout: int = 120):
         try:
             if config.e2b_api_url != "" and config.e2b_api_url is not None:
                 sandbox = await asyncio.wait_for(
-                    AsyncSandbox.create(api_key=config.e2b_api_key, api_url=config.e2b_api_url, timeout=timeout),
+                    AsyncSandbox.create(api_key=config.e2b_api_key, timeout=timeout),
                     timeout=60)
             else:
                 sandbox = await asyncio.wait_for(
@@ -121,6 +121,7 @@ async def run_code_in_e2b(code: str, requirements: list, timeout: int = 120):
             await sandbox.commands.run(cmds, timeout=timeout)
 
         exec_codes = await sandbox.run_code(code)
+        await sandbox.kill()
         return exec_codes.logs.stdout
 
 
