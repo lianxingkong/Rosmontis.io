@@ -16,6 +16,10 @@ ai相关: openai标准库实现, 暂时不支持图片和文件上传
 
 建议使用 `conda` 并为项目配置专用的虚拟环境, 注意需要 `python3>=3.12`, 我们测试时使用的是 3.14.2
 
+准备目录 `mcp_workdir/fs` , 不存在则创建
+
+MCP 调用需要 `nodejs` `npm` `npx`, 建议安装, 或者进入文件 [mcp_config.py](src/plugins/mcp_support/mcp_config.py) 删除相关条目
+
 ### 安装项目依赖
 
 ```bash
@@ -30,7 +34,7 @@ pip install -r requirements.txt
 
 ### 准备数据库
 
-推荐使用 mysql + aiomysql , 不支持 sqlite
+推荐使用 mysql + aiomysql , 支持 sqlite , 需要修改 `pymysql`为 `aiosqlite`
 
 安装数据库不再赘述, 记得创建空数据库用于初始化即可
 

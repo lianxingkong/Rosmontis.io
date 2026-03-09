@@ -29,3 +29,5 @@ watchfiles==1.1.1
 websockets==16.0
 e2b_code_interpreter==2.4.1
 pymysql==1.1.2
+mcp==1.26.0
+aiosqlite==0.22.1
