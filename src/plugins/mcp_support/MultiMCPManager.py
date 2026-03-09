@@ -1,7 +1,6 @@
 import asyncio
 from contextlib import AbstractAsyncContextManager
-from dataclasses import dataclass
-from typing import Optional, Dict, Any, Literal
+from typing import Dict, Any
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
@@ -9,57 +8,75 @@ from mcp.client.stdio import stdio_client, StdioServerParameters
 from mcp.client.streamable_http import streamable_http_client
 from nonebot.log import logger
 
-
-@dataclass
-class McpServerConfig:
-    """MCP 服务器配置"""
-    name: str  # 唯一, 必须
-    transport: Literal["stdio", "sse", "streamable-http"] = "stdio"
-    # 通信方案
-
-    # stdio config
-    command: Optional[str] = None  # 必须
-    args: Optional[list] = None
-    env: Optional[Dict[str, str]] = None
-
-    # SSE / Streamable HTTP config
-    url: Optional[str] = None  # 必须
-
-    # 通用配置
-    timeout: int = 30
-    prefix: Optional[str] = None
-    # 私有前缀, 用于区分同名工具
-    headers: Optional[Dict[str, str]] = None  # 认证头等
+from .mcp_config import McpServerConfig, mcp_init_timeout
 
 
 class MultiMCPManager:
     def __init__(self, configs: list[McpServerConfig]):
-        self.configs = configs
+        self.configs = configs  # 配置
         self.sessions: Dict[str, ClientSession] = {}  # 保存会话
-        self.tool_map: Dict[str, str] = {}  # 工具聚合的列表
-        self.tool_original_map: Dict[str, str] = {}  # 修饰后的名称-修饰前的名称
+        self.tool_map: Dict[str, str] = {}  # 修正名称: MCP服务名
+        self.tool_original_map: Dict[str, str] = {}  # 修饰后的名称-原工具名
         self.all_tools: list = []  # 工具的列表
-        self._contexts: list = []  # 句柄列表,清理用
-        # self._stop_event = asyncio.Event() # 关闭事件
+        self._tasks: list[asyncio.Task] = []  # 后台任务列表
+        self._stop_event = asyncio.Event()  # 关闭事件
+        self._ready_events: Dict[str, asyncio.Event] = {}  # 事件就绪列表: 初始化时创建
 
     async def connect_all(self):
         """ 初始化所有mcp连接 """
-        tasks = [self._connect_single(cfg) for cfg in self.configs]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        for cfg, result in zip(self.configs, results):
-            if isinstance(result, Exception):
-                logger.warning(f"server: {cfg.name} connected failed")
-            else:
-                logger.info(f"server: {cfg.name} connected")
+        self._stop_event.clear()
+        self._ready_events.clear()
+
+        for cfg in self.configs:
+            self._ready_events[cfg.name] = asyncio.Event()  # 插入事件
+            task = asyncio.create_task(self._run_server(cfg))
+            self._tasks.append(task)
+        try:
+            await asyncio.wait_for(asyncio.gather(
+                *[ev.wait() for ev in self._ready_events.values()]),
+                timeout=mcp_init_timeout
+            )
+            logger.info("All MCP servers ready")
+        except asyncio.TimeoutError:
+            not_ready = [name for name, ev in self._ready_events.items() if not ev.is_set()]
+            logger.warning(f"connect_all TimeoutError: MCP servers ready within : {not_ready}")
+
+        except Exception as e:
+            logger.warning(f"connect_all Failed: {e}")
+
         await self.refresh_tools()
 
-    async def _connect_single(self, cfg: McpServerConfig):
-        """ 处理单个连接 """
+    async def _run_server(self, cfg: McpServerConfig):
         transport = await self._create_transport(cfg)
-        await self._init_session(cfg.name, transport)
-        return True
+        try:
+            read, write = await transport.__aenter__()
+            session = ClientSession(read, write)
 
-    async def _create_transport(self, cfg: McpServerConfig) -> AbstractAsyncContextManager:
+            await session.__aenter__()
+            await session.initialize()
+
+            self.sessions[cfg.name] = session
+            self._ready_events[cfg.name].set()  # 标记为初始化完成
+            logger.info(f"Server: {cfg.name} inited")
+
+            await self._stop_event.wait()  # 等待停止事件
+
+        except asyncio.CancelledError:
+            logger.info(f"Server: {cfg.name} task cancelled")
+            raise
+
+        except Exception as e:
+            logger.warning(f"Server: {cfg.name} init failed: {e}")
+
+        finally:
+            if cfg.name in self.sessions:
+                await self.sessions[cfg.name].__aexit__(None, None, None)
+                del self.sessions[cfg.name]
+            await transport.__aexit__(None, None, None)
+            logger.info(f"Server: {cfg.name} closed")
+
+    @staticmethod
+    async def _create_transport(cfg: McpServerConfig) -> AbstractAsyncContextManager:
         """ 根据配置创建对应的 transport """
         if cfg.transport == "stdio":
             if not cfg.command:
@@ -85,17 +102,6 @@ class MultiMCPManager:
         else:
             raise ValueError(f"transport {cfg.transport} not supported")
 
-    async def _init_session(self, name: str, transport: AbstractAsyncContextManager):
-        """ 通用 session 初始化 """
-        read, write = await transport.__aenter__()
-        self._contexts.append(transport)
-
-        session = ClientSession(read, write)
-        await session.__aenter__()
-        await session.initialize()
-
-        self.sessions[name] = session
-        logger.info(f"Session {name} initialized")
 
     def _reset_tool_data(self):
         self.all_tools.clear()
@@ -131,10 +137,10 @@ class MultiMCPManager:
                             "parameters": tool.inputSchema
                         }
                     })
-                    logger.debug(f"tool {prefixed_name} added")
+                    logger.debug(f"tool: {prefixed_name} added")
 
             except Exception as e:
-                logger.warning(f"server {name} failed to get tools: {e}")
+                logger.warning(f"server: {name} failed to get tools: {e}")
 
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]):
         """ 调用工具 """
@@ -157,11 +163,13 @@ class MultiMCPManager:
 
     async def close_all(self):
         """ 关闭所有连接 """
-        for ctx in self._contexts:
-            try:
-                await ctx.__aexit__(None, None, None)
-            except Exception as e:
-                logger.warning(f"server failed to close context: {e}")
+        self._stop_event.set()  # 触发关闭事件
+        for task in self._tasks:
+            task.cancel()
+        await asyncio.gather(*self._tasks, return_exceptions=True)
+        self._tasks.clear()
+        self._stop_event.clear()
+        self._reset_tool_data()
 
     def get_status(self) -> Dict[str, Any]:
         """ MCP 状态 """
