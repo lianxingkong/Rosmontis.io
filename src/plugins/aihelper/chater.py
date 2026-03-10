@@ -266,6 +266,8 @@ async def ai_chat_handle(event: MessageEvent):
                     function_args = json.loads(tool_call.function.arguments)
                 except Exception as e:
                     logger.warning("fail to load tool_call function_args: {}".format(e))
+                    _raw_message.append(
+                        {"tool_call_id": tool_call.id, "role": "tool", "content": "fail: invalid arguments"})
                     continue
                 try:
                     logger.debug(f"MCP : function_name:{function_name} function_args:{function_args}")
