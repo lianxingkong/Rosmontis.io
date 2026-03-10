@@ -39,9 +39,20 @@ mcp_configs = [
         transport="stdio",
         command="python",
         args=["./src/plugins/mcp_support/buildin_mcp.py"],
-        env={"API_KEY": "secret_123"},
+        env={
+            "WEBSEARCH_BASE_URL": "https://api.bocha.cn/v1/web-search",
+            # 网页搜索 api ,不支持修改, https://open.bochaai.com/ 注册
+            "WEBSEARCH_TIMEOUT": "90",
+            # 单次搜索超时
+            "WEBSEARCH_API_KEY": "sk-",
+            # https://open.bochaai.com/ 注册,
+            "E2B_API_URL": "",
+            # 云沙箱(py3代码执行) https://e2b.dev/ 注册
+            "E2B_API_KEY": "e2b_",
+            # https://e2b.dev/ 注册
+        },
         prefix="ros",
-    )
+    ),
 ]
 """
 其他例子
