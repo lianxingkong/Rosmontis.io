@@ -144,3 +144,4 @@ apitests/*
 *testapi*
 jobs.sqlite
 mcp_workdir/
+mcp_config.py
