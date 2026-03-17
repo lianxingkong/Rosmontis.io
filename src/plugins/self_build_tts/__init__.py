@@ -2,15 +2,15 @@ from nonebot.plugin import PluginMetadata, get_plugin_config
 from .config import Config
 
 __plugin_meta__ = PluginMetadata(
-    name = "rvc_gpt_tts",
-    description = "RVC-GPT-TTS文字转语音功能",
+    name = "self_build_tts",
+    description = "文字转语音功能",
     usage = "",
     config = Config,
 )
 
 _config = get_plugin_config(Config)
-config = _config.rvc_gpt_tts
+config = _config.self_build_tts
 
 if config.is_enable:
-    from .rvc_gpt_tts_audio import *
-    from .rvc_gpt_tts_data import *
+    from .self_build_tts_data import *
+    from .self_build_tts_audio import *
