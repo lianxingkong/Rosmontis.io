@@ -5,8 +5,6 @@ import httpx
 from nonebot import require
 from nonebot.log import logger
 
-from . import config
-
 require("src.plugins.public_apis")
 import src.plugins.public_apis as public_apis
 
@@ -48,7 +46,5 @@ async def download_file(url: str, save_path: str):
 
 
 async def upload_file(path: str) -> str:
-    if not config.is_enable_upload:
-        return path
     _res = await public_apis.upload_file(path)
     return _res
