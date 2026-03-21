@@ -12,11 +12,14 @@ import nonebot_plugin_localstore as store
 from . import config
 require("src.plugins.public_apis")
 import src.plugins.public_apis as public_apis
-from gradio_client import Client
+from gradio_client import Client, handle_file
 
 _bucket_gpt_sovits = public_apis.TokenBucket(rate=1 / 40, capacity=1)
 _bucket_qwen3_customvoice = public_apis.TokenBucket(rate=1 / 40, capacity=1)
 _bucket_qwen3_voice_design = public_apis.TokenBucket(rate=1 / 40, capacity=1)
+_bucket_qwen3_base = public_apis.TokenBucket(rate=1 / 40, capacity=1)
+_bucket_qwen3_base_downloadfile = public_apis.TokenBucket(rate=1, capacity=20)
+_bucket_qwen3_base_gen = public_apis.TokenBucket(rate=1, capacity=20)
 
 async def built_gpt_sovits_url_tts(_text: str):
     """处理请求参数并构建url"""
@@ -153,3 +156,71 @@ async def qwen3_tts_voice_design(text: str):
     _remote_path = await public_apis.upload_file(file_path)
     logger.debug(f"qwen3_tts_voice_design remote {_remote_path}")
     return _remote_path
+
+
+async def qwen3_tts_base_save_prompt(ref_txt: str, ref_aud: str):
+    await _bucket_qwen3_base.acquire()
+    client = Client(config.qwen3_tts_base_api_url, verbose=False)
+    job = client.submit(
+        ref_aud=handle_file(ref_aud),
+        ref_txt=ref_txt,
+        use_xvec=config.qwen3_tts_base_use_xvec,
+        api_name="/save_prompt"
+    )
+    logger.debug(f"qwen3_tts_base_save_prompt job started")
+    file_path, _ = await wait_for_job(job)
+    logger.debug(f"qwen3_tts_base_save_prompt local {file_path}")
+    _remote_path = await public_apis.upload_file(file_path)
+    logger.debug(f"qwen3_tts_base_save_prompt remote {_remote_path}")
+    return _remote_path
+
+
+async def qwen3_tts_base_gen(file_path: str, text: str):
+    await _bucket_qwen3_base_gen.acquire()
+    client = Client(config.qwen3_tts_base_api_url, verbose=False)
+    job = client.submit(
+        file_obj=handle_file(file_path),
+        text=text,
+        lang_disp=config.qwen3_tts_base_lang_disp,
+        api_name="/load_prompt_and_gen",
+    )
+    logger.debug(f"qwen3_tts_base_gen job started")
+    file_path, _ = await wait_for_job(job)
+    logger.debug(f"qwen3_tts_base_gen local {file_path}")
+    _remote_path = await public_apis.upload_file(file_path)
+    logger.debug(f"qwen3_tts_base_gen remote {_remote_path}")
+    return _remote_path
+
+
+async def get_private_file_from_url(url: str, file_name: str, user_id: int):
+    await _bucket_qwen3_base_downloadfile.acquire()
+    temp_path = store.get_plugin_cache_file(f"{user_id}_{time.time()}_{file_name}")
+    _header = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br, zstd",  # 包含所有现代压缩算法
+        "Accept-Language": "zh-CN,zh;q=0.9",
+        "Connection": "keep-alive",
+        "Sec-Ch-Ua": '"Not:A-Brand";v="99", "Google Chrome";v="145", "Chromium";v="145"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    }
+    try:
+        async with httpx.AsyncClient(http2=True, headers=_header, follow_redirects=True, timeout=120) as client:
+            async with client.stream("GET", url) as response:
+                response.raise_for_status()
+                async with aiofiles.open(temp_path, "wb") as f:
+                    async for chunk in response.aiter_bytes(chunk_size=262144):
+                        await f.write(chunk)
+        return str(temp_path)
+    except httpx.HTTPStatusError as e:
+        logger.warning("get_private_file_from_url httpx.HTTPStatusError: {}".format(e))
+        return ""
+    except Exception as e:
+        logger.warning("get_private_file_from_url Exception: {}".format(e))
+        return ""

@@ -38,6 +38,10 @@ class ScopedConfig(BaseModel):
     qwen3_tts_base_api_url: str = "http://localhost:8000"
     # qwen3_tts_base_save_prompt_ref_aud: str = "" 机器人获取
     qwen3_tts_base_use_xvec: bool = False  # 仅用说话人向量，效果有限，但不用传入参考音频文本
+    qwen3_tts_base_lang_disp: Literal[
+        'Auto', 'Chinese', 'English', 'German', 'Italian',
+        'Portuguese', 'Spanish', 'Japanese', 'Korean',
+        'French', 'Russian'] = "Auto"  # 仅仅在生成时候需要
 
 class Config(BaseModel):
     """插件主配置,包含作用域"""
