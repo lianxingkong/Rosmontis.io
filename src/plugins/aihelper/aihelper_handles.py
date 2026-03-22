@@ -88,6 +88,7 @@ async def del_config_by_config_id_and_uid(config_id: int, uid: int, session: Asy
 
 
 async def switch_is_enable_by_id(config_id: int, session: AsyncSession, target: bool, user_id: int) -> int:
+    # 修改 config_id 的 is_enable 为 bool(target)
     async with semaphore_sql:
         smt = select(Settings).where(Settings.id == config_id, Settings.user_id == user_id)
         result = await session.execute(smt)
@@ -98,6 +99,27 @@ async def switch_is_enable_by_id(config_id: int, session: AsyncSession, target: 
         session.add(data)
         await session.commit()
         return 0
+
+
+async def change_is_enable_by_id(config_id: int, session: AsyncSession, user_id: int) -> int | dict:
+    # 将 用户 user_id 的 配置文件 config_id 修改为 True , 其他为 false
+    async with semaphore_sql:
+        smt = select(Settings).where(Settings.user_id == user_id)
+        result = await session.execute(smt)
+        data = result.scalars().all()
+        if data is None:
+            return -1
+        _changed_to_true, _changed_to_false = 0, 0
+        for item in data:
+            if item.id == config_id:
+                item.is_enabled = True
+                _changed_to_true += 1
+            else:
+                _changed_to_false += 1
+                item.is_enabled = False
+        # session.add(data)
+        await session.commit()
+        return {"_changed_to_true": _changed_to_true, "_changed_to_false": _changed_to_false}
 
 
 async def get_comments_by_id(sid: int, session: AsyncSession):

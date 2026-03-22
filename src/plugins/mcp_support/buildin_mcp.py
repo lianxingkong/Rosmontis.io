@@ -90,10 +90,11 @@ async def run_code_in_e2b(code: str, requirements: list[str], timeout: int = 120
     :param code: 单次调用所需要执行的代码
     :param requirements: 每次都需要安装, 运行代码需要安装的包列表，例如 [\"numpy\", \"pandas\"]
     :param timeout: 容器的有效期, 单位秒, 最长3600秒, 默认120秒
-    :return: str, 运行输出或报错
+    :return: {"stdout":stdout, "stderr":stderr}
     """
     bucket_e2b = get_bucket_e2b()
     semaphore_e2b = get_semaphore_e2b()
+    _res = {}
 
     await bucket_e2b.acquire()
     async with semaphore_e2b:
@@ -119,7 +120,7 @@ async def run_code_in_e2b(code: str, requirements: list[str], timeout: int = 120
 
         exec_codes = await sandbox.run_code(code)
         await sandbox.kill()
-        return exec_codes.logs.stdout
+        return {"stdout": exec_codes.logs.stdout, "stderr": exec_codes.logs.stderr}
 
 if __name__ == "__main__":
 

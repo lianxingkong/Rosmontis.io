@@ -41,12 +41,14 @@ async def request_help_handle(args: Message = CommandArg()):
     ai cf delete -- 删除配置(暂不实现)
     ai cf edit -- 编辑配置(暂不实现)
     ai cf switch [config_id:int] [switch:int] -- 启用/禁用配置:0/1
+    ai cf choose [config_id:int] -- 选择配置, 禁用其他
     ai load -- 启动AI
     system [提示词] -- 添加 system 提示词(对话进行时+权限要求)
     ai save -- 退出AI
     ai remove -- 删除数据库中的对话
     ai zp mm -- 压缩内存中缓存的对话
-    ai zp db -- 压缩数据库中的对话""",
+    ai zp db -- 压缩数据库中的对话
+    """,
         "ai-other": """
     yaohud-tts [角色] [内容] -- 妖狐数据 语音合成(当前仅支持中文)
     支持的角色: 原神: 希格雯/神里绫华/胡桃/可莉/芙宁娜
