@@ -5,7 +5,7 @@ from nonebot import on_command
 from nonebot import require
 from nonebot.adapters.onebot.v11 import MessageEvent, GroupMessageEvent, Bot, MessageSegment
 
-from .aihelper_handles import get_comments_by_id
+from .aihelper_handles import get_comments_by_id, download_as_txt
 
 require("nonebot_plugin_orm")
 from nonebot_plugin_orm import async_scoped_session
@@ -40,9 +40,15 @@ async def backup_comments_handle(bot: Bot, event: MessageEvent, session: async_s
         if _session_type == "group":
             _file = MessageSegment("file", {"file": f"base64://{encoded}",
                                             "name": f"backup-{time.time()}-{event.group_id}.bak"})
+            check = await download_as_txt(_res, _session_type)
+            if not check:
+                await backup_comments.finish("下载失败")
         else:
-            _file = MessageSegment("file",
-                                   {"file": f"base64://{encoded}", "name": f"backup-{time.time()}-{event.user_id}.bak"})
+            _file = MessageSegment("file", {"file": f"base64://{encoded}",
+                                            "name": f"backup-{time.time()}-{event.user_id}.bak"})
+            check = await download_as_txt(_res, _session_type)
+            if check == -1:
+                await backup_comments.finish("下载失败")
         await backup_comments.finish(_file)
     else:
         await backup_comments.finish("failed")
